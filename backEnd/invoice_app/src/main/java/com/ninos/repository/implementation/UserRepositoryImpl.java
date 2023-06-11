@@ -7,7 +7,6 @@ import com.ninos.repository.RoleRepository;
 import com.ninos.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -60,10 +59,8 @@ public class UserRepositoryImpl implements UserRepository<User> {
             return user;
             // If any error, throw exception with proper message
         }
-        catch (EmptyResultDataAccessException exception){
-           throw new ApiException("No role found by name: "+ ROLE_USER.name());
-        }
         catch (Exception exception){
+           log.error(exception.getMessage());
            throw new ApiException("An error occurred. Please try again.");
         }
 
