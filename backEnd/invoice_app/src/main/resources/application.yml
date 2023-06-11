@@ -1,4 +1,6 @@
 spring:
+  autoconfigure:
+      exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/securecapita
     password: nahonaho86
@@ -16,5 +18,5 @@ spring:
         format_sql: true
   sql:
     init:
-      mode: always
-      continue-on-error: true
+      mode: never
+      continue-on-error: false
