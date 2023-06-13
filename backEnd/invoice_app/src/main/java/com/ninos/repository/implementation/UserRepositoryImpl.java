@@ -95,6 +95,18 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
         return null;
     }
 
+    @Override
+    public User getUserByEmail(String email) {
+        try {
+            User user = jdbc.queryForObject(SELECT_USER_BY_EMAIL_QUERY, Map.of("email", email), new UserRowMapper());
+            return user;
+        } catch (EmptyResultDataAccessException exception) {
+            throw new ApiException("No User found by email: " + email);
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again.");
+        }
+    }
 
 
     // methods section
@@ -133,17 +145,8 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
     }
 
 
-    public User getUserByEmail(String email) {
-        try {
-            User user = jdbc.queryForObject(SELECT_USER_BY_EMAIL_QUERY, Map.of("email", email), new UserRowMapper());
-            return user;
-        } catch (EmptyResultDataAccessException exception) {
-            throw new ApiException("No User found by email: " + email);
-        } catch (Exception exception) {
-            log.error(exception.getMessage());
-            throw new ApiException("An error occurred. Please try again.");
-        }
-    }
+
+
 
 
 

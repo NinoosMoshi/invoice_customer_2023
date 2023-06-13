@@ -6,5 +6,6 @@ import com.ninos.model.User;
 public interface UserService {
 
   UserDTO createUser(User user);
+  UserDTO getUserByEmail(String email);
 
 }

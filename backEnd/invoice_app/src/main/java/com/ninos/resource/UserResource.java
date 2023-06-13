@@ -1,6 +1,7 @@
 package com.ninos.resource;
 
 import com.ninos.dto.UserDTO;
+import com.ninos.form.LoginForm;
 import com.ninos.model.HttpResponse;
 import com.ninos.model.User;
 import com.ninos.service.UserService;
@@ -31,11 +32,19 @@ public class UserResource {
 
 
     @PostMapping(value = {"/login", "/sign-in"})
-    public ResponseEntity<HttpResponse> login(String username, String password){
+    public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm){
 
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username,password));
-
-    return null;
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginForm.getEmail(),loginForm.getPassword()));
+        UserDTO userByEmailDTO = userService.getUserByEmail(loginForm.getEmail());
+        return ResponseEntity.ok()
+                .body(
+                        HttpResponse.builder()
+                                .timeStamp(now().toString())
+                                .data(Map.of("user", userByEmailDTO))
+                                .message("Login Success")
+                                .status(HttpStatus.OK)
+                                .statusCode(HttpStatus.OK.value())
+                                .build());
     }
 
 

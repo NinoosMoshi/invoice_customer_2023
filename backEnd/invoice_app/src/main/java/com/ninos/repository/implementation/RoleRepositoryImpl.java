@@ -13,8 +13,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.ninos.query.RoleQuery.INSERT_ROLE_TO_USER_QUERY;
-import static com.ninos.query.RoleQuery.SELECT_ROLE_BY_NAME_QUERY;
+import static com.ninos.query.RoleQuery.*;
 
 @Repository
 @AllArgsConstructor
@@ -64,7 +63,13 @@ public class RoleRepositoryImpl implements RoleRepository<Role> {
 
     @Override
     public Role getRoleByUserId(Long userId) {
-        return null;
+        log.info("Adding role for user id: {} ",userId);
+        try {
+            return jdbc.queryForObject(SELECT_ROLE_BY_ID_QUERY, Map.of("id", userId), new RoleRowMapper());
+        }
+        catch (Exception exception){
+            throw new ApiException("An error occurred. Please try again.");
+        }
     }
 
     @Override
