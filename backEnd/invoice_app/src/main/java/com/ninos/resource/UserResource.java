@@ -35,17 +35,12 @@ public class UserResource {
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm){
 
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginForm.getEmail(),loginForm.getPassword()));
-        UserDTO userByEmailDTO = userService.getUserByEmail(loginForm.getEmail());
-        return ResponseEntity.ok()
-                .body(
-                        HttpResponse.builder()
-                                .timeStamp(now().toString())
-                                .data(Map.of("user", userByEmailDTO))
-                                .message("Login Success")
-                                .status(HttpStatus.OK)
-                                .statusCode(HttpStatus.OK.value())
-                                .build());
+        UserDTO user = userService.getUserByEmail(loginForm.getEmail());
+        return user.isUsingMfa() ? sendVerificationCode(user) : sendResponse(user);
+
     }
+
+
 
 
     @PostMapping(value = {"/register", "/sign-up"})
@@ -66,6 +61,33 @@ public class UserResource {
     private URI getUri() {
       return URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/get/<userId>").toUriString());
     }
+
+
+    private ResponseEntity<HttpResponse> sendResponse(UserDTO user) {
+                return ResponseEntity.ok().body(
+                        HttpResponse.builder()
+                                .timeStamp(now().toString())
+                                .data(Map.of("user", user))
+                                .message("Login Success")
+                                .status(HttpStatus.OK)
+                                .statusCode(HttpStatus.OK.value())
+                                .build());
+    }
+
+    private ResponseEntity<HttpResponse> sendVerificationCode(UserDTO user) {
+        userService.sendVerificationCode(user);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(Map.of("user", user))
+                        .message("Verification Code Sent")
+                        .status(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
+                        .build());
+    }
+
+
+
 
 
 }

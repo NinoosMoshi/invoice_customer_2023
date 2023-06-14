@@ -27,5 +27,10 @@ public class UserServiceImpl implements UserService {
         return UserDTOMapper.fromUser(userByEmail);
     }
 
+    @Override
+    public void sendVerificationCode(UserDTO user) {
+       userRepository.sendVerificationCode(user);
+    }
+
 
 }

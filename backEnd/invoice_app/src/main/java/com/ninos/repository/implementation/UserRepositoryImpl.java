@@ -1,5 +1,6 @@
 package com.ninos.repository.implementation;
 
+import com.ninos.dto.UserDTO;
 import com.ninos.exception.ApiException;
 import com.ninos.model.Role;
 import com.ninos.model.User;
@@ -9,6 +10,8 @@ import com.ninos.repository.UserRepository;
 import com.ninos.rowmapper.UserRowMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -22,14 +25,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 import static com.ninos.enumeration.RoleType.ROLE_USER;
 import static com.ninos.enumeration.verificationType.ACCOUNT;
 import static com.ninos.query.UserQuery.*;
+import static com.ninos.utils.SmsUtils.sendSMS;
+import static org.apache.commons.lang3.time.DateUtils.addDays;
 
 @Repository
 @AllArgsConstructor
@@ -37,6 +39,7 @@ import static com.ninos.query.UserQuery.*;
 public class UserRepositoryImpl implements UserRepository<User>, UserDetailsService {
 
 
+    private static final String DATE_FORMAT = "yyyy-MM-dd hh:mm:ss";
     private final NamedParameterJdbcTemplate jdbc;
     private final RoleRepository<Role> roleRepository;
     private final BCryptPasswordEncoder encoder;
@@ -58,7 +61,7 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
             // Save URL in verification table
             jdbc.update(INSERT_ACCOUNT_VERIFICATION_URL_QUERY, Map.of("userId", user.getId(), "url", verificationUrl));
             // Send email to user with verification URL
-           // emailService.sendVerificationUrl(user.getFirstName(), user.getEmail(), verificationUrl, ACCOUNT);
+//            emailService.sendVerificationUrl(user.getFirstName(), user.getEmail(), verificationUrl, ACCOUNT);
             user.setEnabled(false);
             user.setNotLocked(true);
             // Return the newly created user
@@ -106,6 +109,25 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
             log.error(exception.getMessage());
             throw new ApiException("An error occurred. Please try again.");
         }
+    }
+
+
+    @Override
+    public void sendVerificationCode(UserDTO user) {
+        // DateFormatUtils and RandomStringUtils came from org.apache.commons library
+        String expirationDate = DateFormatUtils.format(addDays(new Date(), 1), DATE_FORMAT); // 1: equivalent to 24 hours or it's mean 1 day
+        String verificationCode = RandomStringUtils.randomAlphabetic(8);
+
+        try {
+            jdbc.update(DELETE_VERIFICATION_CODE_BY_USER_ID, Map.of("id", user.getId()));
+            jdbc.update(INSERT_VERIFICATION_CODE_QUERY, Map.of("userId", user.getId(), "code",verificationCode, "expirationDate",expirationDate));
+            //sendSMS(user.getPhone(), "From Invoice application \nVerification code\n" + verificationCode);
+        }
+        catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again.");
+        }
+
     }
 
 

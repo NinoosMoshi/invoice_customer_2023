@@ -1,5 +1,6 @@
 package com.ninos.repository;
 
+import com.ninos.dto.UserDTO;
 import com.ninos.model.User;
 
 import java.util.Collection;
@@ -17,4 +18,5 @@ public interface UserRepository<T extends User>{
     /* More Complex Operations */
     User getUserByEmail(String email);
 
+    void sendVerificationCode(UserDTO user);
 }
