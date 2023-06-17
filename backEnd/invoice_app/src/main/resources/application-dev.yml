@@ -1,3 +1,7 @@
+
+jwt:
+  secret: d33eaea1a37103188a98c46774798f11309d007ba812209862a0556693023931
+
 spring:
 #  autoconfigure:
 #      exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration

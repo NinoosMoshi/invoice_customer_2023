@@ -1,9 +1,13 @@
 package com.ninos.resource;
 
 import com.ninos.dto.UserDTO;
+import com.ninos.dtomapper.UserDTOMapper;
 import com.ninos.form.LoginForm;
 import com.ninos.model.HttpResponse;
 import com.ninos.model.User;
+import com.ninos.model.UserPrinciple;
+import com.ninos.provider.TokenProvider;
+import com.ninos.service.RoleService;
 import com.ninos.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,10 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
@@ -29,6 +30,8 @@ public class UserResource {
 
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
+    private final TokenProvider tokenProvider;
+    private final RoleService roleService;
 
 
     @PostMapping(value = {"/login", "/sign-in"})
@@ -58,6 +61,24 @@ public class UserResource {
 
     }
 
+
+    @GetMapping("/verify/code/{email}/{code}")
+    public ResponseEntity<HttpResponse> verifyCode(@PathVariable("email") String email, @PathVariable("code") String code){
+        UserDTO user = userService.verifyCode(email, code);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(Map.of("user", user,
+                                "access_token", tokenProvider.createAccessToken(getUserPrincipal(user)),
+                                "refresh_token",tokenProvider.createRefreshToken(getUserPrincipal(user))
+                        ))
+                        .message("Login Success")
+                        .status(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
+                        .build());
+
+    }
+
     private URI getUri() {
       return URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/get/<userId>").toUriString());
     }
@@ -67,11 +88,19 @@ public class UserResource {
                 return ResponseEntity.ok().body(
                         HttpResponse.builder()
                                 .timeStamp(now().toString())
-                                .data(Map.of("user", user))
+                                .data(Map.of("user", user,
+                                             "access_token", tokenProvider.createAccessToken(getUserPrincipal(user)),
+                                             "refresh_token",tokenProvider.createRefreshToken(getUserPrincipal(user))
+                                        ))
                                 .message("Login Success")
                                 .status(HttpStatus.OK)
                                 .statusCode(HttpStatus.OK.value())
                                 .build());
+    }
+
+    private UserPrinciple getUserPrincipal(UserDTO user) {
+        // get user from user principle and all user permissions
+        return new UserPrinciple(UserDTOMapper.toUser(userService.getUserByEmail(user.getEmail())), roleService.getRoleByUserId(user.getId()).getPermission());
     }
 
     private ResponseEntity<HttpResponse> sendVerificationCode(UserDTO user) {

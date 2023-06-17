@@ -122,12 +122,50 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
             jdbc.update(DELETE_VERIFICATION_CODE_BY_USER_ID, Map.of("id", user.getId()));
             jdbc.update(INSERT_VERIFICATION_CODE_QUERY, Map.of("userId", user.getId(), "code",verificationCode, "expirationDate",expirationDate));
             //sendSMS(user.getPhone(), "From Invoice application \nVerification code\n" + verificationCode);
+            log.info("Verification Code: {}", verificationCode);
         }
         catch (Exception exception) {
             log.error(exception.getMessage());
             throw new ApiException("An error occurred. Please try again.");
         }
 
+    }
+
+    @Override
+    public User verifyCode(String email, String code) {
+      if (isVerificationCodeExpired(code)) throw new ApiException("This code has expired. Please login again.");
+      try {
+          User userByCode = jdbc.queryForObject(SELECT_USER_BY_CODE_QUERY, Map.of("code", code), new UserRowMapper());
+          User userByEmail = jdbc.queryForObject(SELECT_USER_BY_EMAIL_QUERY, Map.of("email", email), new UserRowMapper());
+          if (userByCode.getEmail().equalsIgnoreCase(userByEmail.getEmail())){
+              jdbc.update(DELETE_CODE,Map.of("code", code));
+              return userByCode;
+          }else {
+              throw new ApiException("Code is Invalid. Please try again");
+          }
+      }
+      catch (EmptyResultDataAccessException exception){
+          throw new ApiException("could not find a record");
+      }
+      catch (Exception exception) {
+          log.error(exception.getMessage());
+          throw new ApiException("An error occurred. Please try again.");
+      }
+
+
+    }
+
+    private Boolean isVerificationCodeExpired(String code) {
+        try {
+            return jdbc.queryForObject(SELECT_CODE_EXPIRATION_QUERY, Map.of("code", code), Boolean.class);
+        }
+        catch (EmptyResultDataAccessException exception){
+            throw new ApiException("This code is not valid.Please login again.");
+        }
+        catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again.");
+        }
     }
 
 
