@@ -1,5 +1,6 @@
 package com.ninos.configuration;
 
+import com.ninos.filter.CustomAuthorizationFilter;
 import com.ninos.handler.CustomAccessDeniedHandler;
 import com.ninos.handler.CustomAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 
 @Configuration
@@ -30,6 +32,7 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final UserDetailsService userDetailsService;
+    private final CustomAuthorizationFilter customAuthorizationFilter;
 
 
 
@@ -42,6 +45,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests().requestMatchers(HttpMethod.DELETE, "/customer/delete/**").hasAnyAuthority("DELETE:CUSTOMER");
         http.exceptionHandling().accessDeniedHandler(customAccessDeniedHandler).authenticationEntryPoint(customAuthenticationEntryPoint);
         http.authorizeHttpRequests().anyRequest().authenticated();
+        http.addFilterBefore(customAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
