@@ -64,6 +64,8 @@ public class UserResource {
     }
 
 
+
+
     @GetMapping("/profile")
     public ResponseEntity<HttpResponse> profile(Authentication authentication){
         UserDTO user = userService.getUserByEmail(authentication.getName());
