@@ -7,7 +7,9 @@ import com.auth0.jwt.exceptions.InvalidClaimException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.ninos.model.UserPrinciple;
+import com.ninos.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,7 +25,7 @@ import java.util.List;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
-
+@RequiredArgsConstructor
 @Component
 public class TokenProvider {
 
@@ -33,6 +35,8 @@ public class TokenProvider {
     private static final long ACCESS_TOKEN_EXPIRATION_TIME = 1_800_000;   // 30 minutes
     private static final long REFRESH_TOKEN_EXPIRATION_TIME = 432_000_000;  // 5 days;
     public static final String TOKEN_CANNOT_BE_VERIFIED = "Token cannot be verified";
+
+    private final UserService userService;
 
 
     @Value("${jwt.secret}")
@@ -89,7 +93,7 @@ public class TokenProvider {
     }
 
     public Authentication getAuthentication(String email, List<GrantedAuthority> authorities, HttpServletRequest request){
-        UsernamePasswordAuthenticationToken userPasswordAuthToken = new UsernamePasswordAuthenticationToken(email, null,authorities);
+        UsernamePasswordAuthenticationToken userPasswordAuthToken = new UsernamePasswordAuthenticationToken(userService.getUserByEmail(email), null,authorities);
         userPasswordAuthToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         return userPasswordAuthToken;
     }

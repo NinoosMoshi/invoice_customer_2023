@@ -199,7 +199,7 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
             throw new UsernameNotFoundException("User not found in the database");
         }else {
             log.info("User found in the database {}", email);
-            return new UserPrinciple(user,roleRepository.getRoleByUserId(user.getId()).getPermission());
+            return new UserPrinciple(user,roleRepository.getRoleByUserId(user.getId()));
         }
 
     }

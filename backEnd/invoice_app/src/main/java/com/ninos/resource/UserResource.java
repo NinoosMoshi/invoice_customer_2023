@@ -2,6 +2,7 @@ package com.ninos.resource;
 
 import com.ninos.dto.UserDTO;
 import com.ninos.dtomapper.UserDTOMapper;
+import com.ninos.exception.ApiException;
 import com.ninos.form.LoginForm;
 import com.ninos.model.HttpResponse;
 import com.ninos.model.User;
@@ -9,6 +10,9 @@ import com.ninos.model.UserPrinciple;
 import com.ninos.provider.TokenProvider;
 import com.ninos.service.RoleService;
 import com.ninos.service.UserService;
+import com.twilio.twiml.voice.Echo;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +25,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.Map;
 
+import static com.ninos.utils.ExceptionUtils.processError;
 import static java.time.LocalDateTime.now;
 import static org.springframework.security.authentication.UsernamePasswordAuthenticationToken.unauthenticated;
 
@@ -34,17 +39,20 @@ public class UserResource {
     private final AuthenticationManager authenticationManager;
     private final TokenProvider tokenProvider;
     private final RoleService roleService;
+    private final HttpServletRequest request;
+    private final HttpServletResponse response;
 
 
     @PostMapping(value = {"/login", "/sign-in"})
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm){
-
-        authenticationManager.authenticate(unauthenticated(loginForm.getEmail(),loginForm.getPassword()));
-        UserDTO user = userService.getUserByEmail(loginForm.getEmail());
+        Authentication authentication = authenticate(loginForm.getEmail(),loginForm.getPassword());
+        UserDTO user = getAuthenticatedUser(authentication);
         return user.isUsingMfa() ? sendVerificationCode(user) : sendResponse(user);
-
     }
 
+     private UserDTO getAuthenticatedUser(Authentication authentication){
+        return ((UserPrinciple) authentication.getPrincipal()).getUser();
+     }
 
 
 
@@ -98,6 +106,19 @@ public class UserResource {
 
     }
 
+
+    @RequestMapping("/error")
+    public ResponseEntity<HttpResponse> handleError(HttpServletRequest request) {
+        return ResponseEntity.badRequest().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .reason("There is no mapping for a " + request.getMethod() + " request for this path on the server")
+                        .status(HttpStatus.BAD_REQUEST)
+                        .statusCode(HttpStatus.BAD_REQUEST.value())
+                        .build());
+    }
+
+
     private URI getUri() {
       return URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/get/<userId>").toUriString());
     }
@@ -119,7 +140,7 @@ public class UserResource {
 
     private UserPrinciple getUserPrincipal(UserDTO user) {
         // get user from user principle and all user permissions
-        return new UserPrinciple(UserDTOMapper.toUser(userService.getUserByEmail(user.getEmail())), roleService.getRoleByUserId(user.getId()).getPermission());
+        return new UserPrinciple(UserDTOMapper.toUser(userService.getUserByEmail(user.getEmail())), roleService.getRoleByUserId(user.getId()));
     }
 
     private ResponseEntity<HttpResponse> sendVerificationCode(UserDTO user) {
@@ -132,6 +153,20 @@ public class UserResource {
                         .status(HttpStatus.OK)
                         .statusCode(HttpStatus.OK.value())
                         .build());
+    }
+
+
+
+
+    private Authentication authenticate(String email, String password){
+        try {
+            Authentication authentication = authenticationManager.authenticate(unauthenticated(email,password));
+            return authentication;
+        }
+        catch (Exception exception){
+            processError(request, response, exception);
+            throw new ApiException(exception.getMessage());
+        }
     }
 
 
