@@ -12,6 +12,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import static com.ninos.utils.ExceptionUtils.processError;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import java.io.IOException;
 import java.util.Arrays;
@@ -51,7 +53,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
        }
        catch (Exception exception){
            log.error(exception.getMessage());
-          // processError(request, response, exception);
+           processError(request, response, exception);
        }
     }
 
