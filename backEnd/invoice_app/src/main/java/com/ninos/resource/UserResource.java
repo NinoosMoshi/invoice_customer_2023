@@ -89,6 +89,10 @@ public class UserResource {
     }
 
 
+
+
+
+
     @GetMapping("/verify/code/{email}/{code}")
     public ResponseEntity<HttpResponse> verifyCode(@PathVariable("email") String email, @PathVariable("code") String code){
         UserDTO user = userService.verifyCode(email, code);
@@ -105,6 +109,28 @@ public class UserResource {
                         .build());
 
     }
+
+
+
+
+    @GetMapping("/reset-password/{email}")
+    public ResponseEntity<HttpResponse> resetPassword(@PathVariable("email") String email){
+        userService.resetPassword(email);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message("Email sent. Please check your email to reset your password.")
+                        .status(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
+                        .build());
+
+    }
+
+
+
+
+
+
 
 
     @RequestMapping("/error")

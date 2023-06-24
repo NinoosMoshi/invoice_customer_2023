@@ -29,6 +29,7 @@ import java.util.*;
 
 import static com.ninos.enumeration.RoleType.ROLE_USER;
 import static com.ninos.enumeration.verificationType.ACCOUNT;
+import static com.ninos.enumeration.verificationType.PASSWORD;
 import static com.ninos.query.UserQuery.*;
 import static com.ninos.utils.SmsUtils.sendSMS;
 import static org.apache.commons.lang3.time.DateUtils.addDays;
@@ -154,6 +155,26 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
 
 
     }
+
+    @Override
+    public void resetPassword(String email) {
+        if(getEmailCount(email.trim().toLowerCase()) <= 0) throw new ApiException("There is no account for this email address.");
+        try {
+        String expirationDate = DateFormatUtils.format(addDays(new Date(), 1), DATE_FORMAT); // 1: equivalent to 24 hours or it's mean 1 day
+        User user = getUserByEmail(email);
+        String verificationUrl = getVerificationUrl(UUID.randomUUID().toString(), PASSWORD.getType());
+        jdbc.update(DELETE_PASSWORD_VERIFICATION_BY_USER_ID_QUERY, Map.of("userId", user.getId()));
+        jdbc.update(INSERT_PASSWORD_VERIFICATION_QUERY, Map.of("userId", user.getId(), "url", verificationUrl, "expirationDate", expirationDate));
+        // TODO send email with url to user
+        log.info("verification URL: {}", verificationUrl);
+        }
+        catch (Exception exception) {
+            throw new ApiException("An error occurred. Please try again.");
+        }
+    }
+
+
+
 
     private Boolean isVerificationCodeExpired(String code) {
         try {
