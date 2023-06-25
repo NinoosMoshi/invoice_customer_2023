@@ -1,6 +1,7 @@
 package com.ninos.repository.implementation;
 
 import com.ninos.dto.UserDTO;
+import com.ninos.enumeration.verificationType;
 import com.ninos.exception.ApiException;
 import com.ninos.model.Role;
 import com.ninos.model.User;
@@ -156,6 +157,7 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
 
     }
 
+
     @Override
     public void resetPassword(String email) {
         if(getEmailCount(email.trim().toLowerCase()) <= 0) throw new ApiException("There is no account for this email address.");
@@ -173,7 +175,52 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
         }
     }
 
+    @Override
+    public User verifyPasswordKey(String key) {
+        if(isLinkExpired(key, PASSWORD)) throw new ApiException("This link has expired. Pleas reset your password again.");
+        try {
+            User user = jdbc.queryForObject(SELECT_USER_BY_PASSWORD_URL_QUERY, Map.of("url", getVerificationUrl(key, PASSWORD.getType())), new UserRowMapper());
+//            jdbc.update("DELETE_USER_FROM_PASSWORD_VERIFICATION_QUERY", Map.of("id", user.getId())); // Depends on user case / developer or business
+            return user;
+        }
+        catch (EmptyResultDataAccessException exception){
+            log.error(exception.getMessage());
+            throw new ApiException("This link is not valid. Please reset your password again.");
+        }
+        catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again.");
+        }
 
+    }
+
+    @Override
+    public void renewPassword(String key, String password, String confirmPassword) {
+       if(!password.equals(confirmPassword)) throw new ApiException("Passwords don't match. Please try again");
+        try {
+            jdbc.update(UPDATE_USER_PASSWORD_BY_URL_QUERY, Map.of("password", encoder.encode(password), "url", getVerificationUrl(key, PASSWORD.getType())));
+            jdbc.update(DELETE_VERIFICATION_BY_URL_QUERY, Map.of("url", getVerificationUrl(key, PASSWORD.getType())));
+        }
+        catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again.");
+        }
+    }
+
+
+    private boolean isLinkExpired(String key, verificationType password) {
+        try {
+            return jdbc.queryForObject(SELECT_EXPIRATION_BY_URL, Map.of("url", getVerificationUrl(key, password.getType())), Boolean.class);
+        }
+        catch (EmptyResultDataAccessException exception){
+            log.error(exception.getMessage());
+            throw new ApiException("This link is not valid. Please reset your password again.");
+        }
+        catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again.");
+        }
+    }
 
 
     private Boolean isVerificationCodeExpired(String code) {

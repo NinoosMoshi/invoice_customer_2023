@@ -112,7 +112,7 @@ public class UserResource {
 
 
 
-
+    /*START- To reset password when user not logged in*/
     @GetMapping("/reset-password/{email}")
     public ResponseEntity<HttpResponse> resetPassword(@PathVariable("email") String email){
         userService.resetPassword(email);
@@ -123,12 +123,42 @@ public class UserResource {
                         .status(HttpStatus.OK)
                         .statusCode(HttpStatus.OK.value())
                         .build());
-
     }
 
 
 
+    @GetMapping("/verify/password/{key}")
+    public ResponseEntity<HttpResponse> verifyPasswordUrl(@PathVariable("key") String key){
+        UserDTO user = userService.verifyPasswordKey(key);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(Map.of("user", user))
+                        .message("Please enter a new  password.")
+                        .status(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
+                        .build());
+    }
 
+
+
+    @PostMapping("/reset-password/{key}/{password}/{confirmPassword}")
+    public ResponseEntity<HttpResponse> resetPasswordWithKey(@PathVariable("key") String key,
+                                                             @PathVariable("password") String password,
+                                                             @PathVariable("confirmPassword") String confirmPassword)
+    {
+        userService.renewPassword(key, password, confirmPassword);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message("Password reset successfully.")
+                        .status(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
+                        .build());
+    }
+
+
+    /*END- To reset password when user not logged in*/
 
 
 
