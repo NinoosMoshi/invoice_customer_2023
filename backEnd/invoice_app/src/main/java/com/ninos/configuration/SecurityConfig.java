@@ -26,7 +26,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
     private static final String[] PUBLIC_URLS = {"/user/register/**", "/user/login/**", "/user/verify/code/**",
-                                                 "/user/reset-password/**", "/user/verify/password/**"
+                                                 "/user/reset-password/**", "/user/verify/password/**",
+                                                 "/user/verify/account/**"
                                                 };
 
 

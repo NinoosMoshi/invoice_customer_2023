@@ -107,7 +107,6 @@ public class UserResource {
                         .status(HttpStatus.OK)
                         .statusCode(HttpStatus.OK.value())
                         .build());
-
     }
 
 
@@ -159,6 +158,22 @@ public class UserResource {
 
 
     /*END- To reset password when user not logged in*/
+
+
+    @GetMapping("/verify/account/{key}")
+    public ResponseEntity<HttpResponse> verifyAccount(@PathVariable("key") String key){
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message(userService.verifyAccount(key).isEnabled() ? "Account already verified" : "Account verified")
+                        .status(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
+                        .build());
+    }
+
+
+
+
 
 
 

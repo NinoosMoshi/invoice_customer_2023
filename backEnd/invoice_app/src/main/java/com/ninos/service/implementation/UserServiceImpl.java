@@ -58,6 +58,12 @@ public class UserServiceImpl implements UserService {
         userRepository.renewPassword(key, password, confirmPassword);
     }
 
+    @Override
+    public UserDTO verifyAccount(String key) {
+        User userByVerifyAccount = userRepository.verifyAccount(key);
+        return mapToUserDTO(userByVerifyAccount);
+    }
+
 
     private UserDTO mapToUserDTO(User user){
         return UserDTOMapper.fromUser(user, roleRepository.getRoleByUserId(user.getId()));
