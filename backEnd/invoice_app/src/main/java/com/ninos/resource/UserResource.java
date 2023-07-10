@@ -267,7 +267,6 @@ public class UserResource {
             return authentication;
         }
         catch (Exception exception){
-            processError(request, response, exception);
             throw new ApiException(exception.getMessage());
         }
     }
